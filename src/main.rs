@@ -6,16 +6,19 @@ use bevy_rapier3d::prelude::*;
 // use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use rand::random;
 use repeat_macro::simulations;
+use bevy::ecs::schedule::ShouldRun;
 use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 
 
 fn main() {
     let mut app = App::new();
     app
-        .add_plugins((DefaultPlugins, RapierPhysicsPlugin::<NoUserData>::default()))//, RapierDebugRenderPlugin::default()))
+        .add_plugins(DefaultPlugins)
+        .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())//, RapierDebugRenderPlugin::default()))
         // .add_plugins(WorldInspectorPlugin::new())
-        .add_systems(Startup, setup_graphics);
-    app.add_plugins((LogDiagnosticsPlugin::default(), FrameTimeDiagnosticsPlugin::default()));
+        .add_startup_system(setup_graphics)
+        .add_plugin(LogDiagnosticsPlugin::default())
+        .add_plugin(FrameTimeDiagnosticsPlugin::default());
     simulations!(app);
     app.run();
 }
@@ -81,12 +84,12 @@ fn setup_physics<const T: usize>(mut commands: Commands,
 }
 
 /// Determines if ball falls below threshold and environment must be reset
-fn must_reset<const T: usize>(query: Query<&Transform, (With<Simulation<T>>, With<Restitution>)>) -> bool {
+fn must_reset<const T: usize>(query: Query<&Transform, (With<Simulation<T>>, With<Restitution>)>) -> ShouldRun {
     let transform = query.single();
     if transform.translation.y < -2.0 {
-        return true;
+        return ShouldRun::Yes;
     }
-    return false;
+    return ShouldRun::No;
 }
 
 /// Resets ball position and changes board to random angle

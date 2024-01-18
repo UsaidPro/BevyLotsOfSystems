@@ -26,8 +26,9 @@ pub fn simulations(tokens: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let appl = &input.a;
 
     let arguments = (0..2000).into_iter().enumerate().map(|(index, _arg)| quote! {
-        #appl.add_systems(Startup, setup_physics::<#index>);
-        #appl.add_systems(Update, (board_movement::<#index>, reset_simulation::<#index>.run_if(must_reset::<#index>)));
+        #appl.add_startup_system(setup_physics::<#index>);
+        #appl.add_system(board_movement::<#index>);
+        #appl.add_system(reset_simulation::<#index>.with_run_criteria(must_reset::<#index>));
     });
     let gen = quote! {#(#arguments)*};
     TokenStream::from(gen)
