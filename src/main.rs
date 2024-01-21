@@ -3,9 +3,7 @@
 use std::f32::consts::PI;
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
-// use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use rand::random;
-use repeat_macro::simulations;
 use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 
 
@@ -13,10 +11,10 @@ fn main() {
     let mut app = App::new();
     app
         .add_plugins((DefaultPlugins, RapierPhysicsPlugin::<NoUserData>::default()))//, RapierDebugRenderPlugin::default()))
-        // .add_plugins(WorldInspectorPlugin::new())
         .add_systems(Startup, setup_graphics);
     app.add_plugins((LogDiagnosticsPlugin::default(), FrameTimeDiagnosticsPlugin::default()));
-    simulations!(app);
+    app.add_systems(Startup, setup_physics::<0>);
+    app.add_systems(Update, (board_movement::<0>, reset_simulation::<0>.run_if(must_reset::<0>)));
     app.run();
 }
 
@@ -29,21 +27,21 @@ fn setup_graphics(mut commands: Commands) {
 }
 
 fn setup_physics<const T: usize>(mut commands: Commands,
-                 mut meshes: ResMut<Assets<Mesh>>,
-                 mut materials: ResMut<Assets<StandardMaterial>>) {
+                                 mut meshes: ResMut<Assets<Mesh>>,
+                                 mut materials: ResMut<Assets<StandardMaterial>>) {
     /* Create the ground. */
     let offset = 10.0 * (T as f32);
     commands.spawn(
         PbrBundle {
-                mesh: meshes.add(Mesh::from(shape::Plane { size: 10.0, ..default()})),
-                material: materials.add(Color::WHITE.into()),
-                transform: Transform::from_xyz(0.0 + offset, 0.0, 0.0)
-                    .with_rotation(Quat::from_euler(EulerRot::XYZ,
-                                                    (random::<f32>() - 0.5) * 5.0 * PI/180.0,
-                                                    0.0,
-                                                    (random::<f32>() - 0.5) * 5.0 * PI/180.0)),
-                ..Default::default()
-            }
+            mesh: meshes.add(Mesh::from(shape::Plane { size: 10.0, ..default()})),
+            material: materials.add(Color::WHITE.into()),
+            transform: Transform::from_xyz(0.0 + offset, 0.0, 0.0)
+                .with_rotation(Quat::from_euler(EulerRot::XYZ,
+                                                (random::<f32>() - 0.5) * 5.0 * PI/180.0,
+                                                0.0,
+                                                (random::<f32>() - 0.5) * 5.0 * PI/180.0)),
+            ..Default::default()
+        }
     )
         .insert(Name::new(format!("Board{}", T)))
         .insert(RigidBody::KinematicPositionBased)
