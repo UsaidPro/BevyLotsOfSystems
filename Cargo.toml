@@ -12,8 +12,12 @@ bevy_rapier3d = "0.23.0"
 rand = "0.8.5"
 RepeatMacro = { path = "RepeatMacro" }
 
-[profile-dev]
+[profile.dev]
 opt-level = 1
 
 [profile.dev.package."*"]
 opt-level = 3
+
+#[profile.release]
+#lto = true
+#codegen-units = 1
