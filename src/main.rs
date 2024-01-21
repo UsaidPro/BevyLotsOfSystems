@@ -5,16 +5,20 @@ use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
 use rand::random;
 use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
+use bevy::ecs::schedule::ShouldRun;
 
 
 fn main() {
     let mut app = App::new();
     app
-        .add_plugins((DefaultPlugins, RapierPhysicsPlugin::<NoUserData>::default()))//, RapierDebugRenderPlugin::default()))
-        .add_systems(Startup, setup_graphics);
-    app.add_plugins((LogDiagnosticsPlugin::default(), FrameTimeDiagnosticsPlugin::default()));
-    app.add_systems(Startup, setup_physics::<0>);
-    app.add_systems(Update, (board_movement::<0>, reset_simulation::<0>.run_if(must_reset::<0>)));
+        .add_plugins(DefaultPlugins)
+        .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())//, RapierDebugRenderPlugin::default()))
+        .add_startup_system(setup_graphics)
+        .add_plugin(LogDiagnosticsPlugin::default())
+        .add_plugin(FrameTimeDiagnosticsPlugin::default())
+        .add_startup_system(setup_physics::<0>)
+        .add_system(board_movement::<0>)
+        .add_system(reset_simulation::<0>.with_run_criteria(must_reset::<0>));
     app.run();
 }
 
@@ -50,18 +54,6 @@ fn setup_physics<const T: usize>(mut commands: Commands,
         .insert(IsBoard)
         .insert(Simulation::<T>);
 
-    // light
-    // commands.spawn(PointLightBundle {
-    //     point_light: PointLight {
-    //         intensity: 1500.0,
-    //         shadows_enabled: true,
-    //         ..default()
-    //     },
-    //     transform: Transform::from_xyz(4.0 + offset, 8.0, 4.0),
-    //     ..default()
-    // })
-    //     .insert(Name::new(format!("Light{}", T)));
-
     /* Create the bouncing ball. */
     commands
         .spawn(PbrBundle {
@@ -79,12 +71,12 @@ fn setup_physics<const T: usize>(mut commands: Commands,
 }
 
 /// Determines if ball falls below threshold and environment must be reset
-fn must_reset<const T: usize>(query: Query<&Transform, (With<Simulation<T>>, With<Restitution>)>) -> bool {
+fn must_reset<const T: usize>(query: Query<&Transform, (With<Simulation<T>>, With<Restitution>)>) -> ShouldRun {
     let transform = query.single();
     if transform.translation.y < -2.0 {
-        return true;
+        return ShouldRun::Yes;
     }
-    return false;
+    return ShouldRun::No;
 }
 
 /// Resets ball position and changes board to random angle
